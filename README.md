@@ -37,6 +37,7 @@ It is a dev dependency of each theme, plugin or module, like `laravel-vite-plugi
 | `wordpress` | `{}` | Options for `wordpressPlugin` |
 | `port` | `VITE_PORT`, else the type's port | Dev server port |
 | `refresh` | `[]` | Extra paths that reload the page |
+| `reloadOn` | theme: `['.blade.php']`, plugin and module: `['.blade.php', '.php']` | File endings whose change reloads the page (a block theme adds `.html`) |
 | `assets` | theme: `resources/assets/{images,fonts}/**` | Static assets copied to the build |
 | `publicDirectory` | the project's `public/`, relative to the package | |
 | `root` | working directory | Package root |

@@ -21,6 +21,8 @@ export interface PolloraOptions {
     themeJson?: Record<string, unknown> | false;
     /** Options for @roots/vite-plugin's wordpressPlugin, used when there are blocks */
     wordpress?: Record<string, unknown>;
+    /** File endings that reload the whole page in development; .blade.php for themes, plus .php for plugins and modules */
+    reloadOn?: string[];
     /** Extra paths that reload the page in development */
     refresh?: string[];
     /** Static assets copied to the build (laravel-vite-plugin's assets option) */

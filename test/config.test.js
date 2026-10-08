@@ -126,6 +126,23 @@ describe('pollora()', () => {
         }
     });
 
+    test('reloads the page on the file endings given', async () => {
+        const reloads = async (options) => {
+            const plugin = (await resolved('theme', options)).plugins.find((each) => each.name === 'pollora:blade-reload');
+            const sent = [];
+            const server = { ws: { send: (payload) => sent.push(payload) } };
+
+            for (const file of ['a.blade.php', 'b.html', 'c.php']) {
+                plugin.handleHotUpdate({ file, server });
+            }
+
+            return sent.length;
+        };
+
+        assert.equal(await reloads({}), 1);
+        assert.equal(await reloads({ reloadOn: ['.blade.php', '.html'] }), 2);
+    });
+
     test('adds theme.json generation for a theme only', async () => {
         const names = async (type) => (await resolved(type)).plugins.map((plugin) => plugin.name);
 

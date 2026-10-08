@@ -138,7 +138,8 @@ export default function pollora(options = {}) {
     const hasBlocks = Object.keys(blocks).length > 0;
     const input = (options.input ?? DEFAULT_INPUT.filter((file) => fs.existsSync(path.join(root, file))));
 
-    const reloadOn = defaults.reloadOn;
+    // File endings that reload the whole page in development (block themes add .html)
+    const reloadOn = options.reloadOn ?? defaults.reloadOn;
     const refresh = [
         // A literal resources/views/** turns every block JSX change into a full reload
         ...refreshPaths.filter((refreshPath) => refreshPath !== 'resources/views/**'),
