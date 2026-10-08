@@ -1,0 +1,47 @@
+{
+    "name": "@pollora/vite-config",
+    "version": "1.0.0",
+    "description": "Vite configuration shared by Pollora themes, plugins and modules",
+    "license": "MIT",
+    "author": "RuBee group (https://rubee.group)",
+    "homepage": "https://pollora.dev",
+    "repository": {
+        "type": "git",
+        "url": "git+https://github.com/Pollora/vite-config.git"
+    },
+    "keywords": ["pollora", "vite", "wordpress", "laravel", "tailwindcss"],
+    "type": "module",
+    "exports": {
+        ".": {
+            "types": "./src/index.d.ts",
+            "default": "./src/index.js"
+        }
+    },
+    "files": ["src"],
+    "engines": {
+        "node": ">=20.19"
+    },
+    "scripts": {
+        "test": "node --test test/*.test.js"
+    },
+    "dependencies": {
+        "glob": "^11.0.0"
+    },
+    "peerDependencies": {
+        "@roots/vite-plugin": "^2.0.0",
+        "@tailwindcss/vite": "^4.0.0",
+        "laravel-vite-plugin": "^2.0.0 || ^3.0.0",
+        "vite": "^7.0.0 || ^8.0.0"
+    },
+    "peerDependenciesMeta": {
+        "@roots/vite-plugin": { "optional": true },
+        "@tailwindcss/vite": { "optional": true }
+    },
+    "devDependencies": {
+        "@roots/vite-plugin": "^2.0.0",
+        "@tailwindcss/vite": "^4.2.3",
+        "laravel-vite-plugin": "^3.0.1",
+        "tailwindcss": "^4.2.3",
+        "vite": "^8.0.9"
+    }
+}
