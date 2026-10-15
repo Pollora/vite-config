@@ -1,6 +1,6 @@
 {
     "name": "@pollora/vite-config",
-    "version": "1.0.0",
+    "version": "1.1.0",
     "description": "Vite configuration shared by Pollora themes, plugins and modules",
     "license": "MIT",
     "author": "RuBee group (https://rubee.group)",
