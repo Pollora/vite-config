@@ -195,10 +195,17 @@ describe('pollora() with a standalone layout', () => {
     }
 
     test('serves the dev server from its root, not from a build path', async () => {
-        const config = await standalone('theme', 'serve');
+        // laravel-vite-plugin refuses a dev server where CI is set, and this only reads the configuration
+        process.env.LARAVEL_BYPASS_ENV_CHECK = '1';
 
-        assert.equal(config.base, '/');
-        assert.equal(config.server.port, 5173);
+        try {
+            const config = await standalone('theme', 'serve');
+
+            assert.equal(config.base, '/');
+            assert.equal(config.server.port, 5173);
+        } finally {
+            delete process.env.LARAVEL_BYPASS_ENV_CHECK;
+        }
     });
 
     test('writes the hot file at the root of the package, and the build and hot file can be renamed', () => {
