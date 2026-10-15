@@ -111,6 +111,39 @@ function resolvePort(option, fallback) {
     return port === undefined || port === '' ? fallback : Number(port);
 }
 
+const LAYOUTS = ['pollora', 'standalone'];
+
+/**
+ * Where a package builds, and where its dev server is announced.
+ *
+ * `pollora` is a Pollora project: every package builds under the project's
+ * public directory, as build/<type>/<name> with a <name>.hot file beside it.
+ * `standalone` is a classic theme, a plugin or a Bedrock site, which have no
+ * shared public directory: the package builds inside itself, into `build/`
+ * with a `hot` file at its root, and `base` is relative so the built CSS and
+ * chunks find each other wherever WordPress serves the folder from.
+ *
+ * @param {object} settings
+ * @returns {{ publicDirectory: string, buildDirectory: string, hotFile: string, base: string|null }}
+ */
+export function layoutOf({ layout, type, name, root, publicDirectory, buildDirectory, hotFile }) {
+    if (layout === 'standalone') {
+        return {
+            publicDirectory: publicDirectory ?? '.',
+            buildDirectory: buildDirectory ?? 'build',
+            hotFile: path.resolve(root, publicDirectory ?? '.', hotFile ?? 'hot'),
+            base: null,
+        };
+    }
+
+    return {
+        publicDirectory: publicDirectory ?? TYPES[type].publicDirectory,
+        buildDirectory: path.join('build', type, name),
+        hotFile: path.resolve(root, publicDirectory ?? TYPES[type].publicDirectory, `${name}.hot`),
+        base: `/build/${type}/${name}`,
+    };
+}
+
 /**
  * The Vite plugins a Pollora theme, plugin or module builds with.
  *
@@ -124,14 +157,23 @@ export default function pollora(options = {}) {
         throw new Error(`@pollora/vite-config: "type" must be one of ${Object.keys(TYPES).join(', ')}, got ${JSON.stringify(type)}.`);
     }
 
+    const layout = options.layout ?? 'pollora';
+
+    if (!LAYOUTS.includes(layout)) {
+        throw new Error(`@pollora/vite-config: "layout" must be one of ${LAYOUTS.join(', ')}, got ${JSON.stringify(layout)}.`);
+    }
+
     const defaults = TYPES[type];
     const root = path.resolve(options.root ?? process.cwd());
     const directoryName = path.basename(root);
     const name = options.name ?? (type === 'module' ? kebab(directoryName) : directoryName);
     // Relative to the package root: laravel-vite-plugin strips a leading slash
-    const publicDirectory = options.publicDirectory ?? defaults.publicDirectory;
-    const buildDirectory = path.join('build', type, name);
-    const base = `/build/${type}/${name}`;
+    const { publicDirectory, buildDirectory, hotFile, base } = layoutOf({
+        layout, type, name, root,
+        publicDirectory: options.publicDirectory,
+        buildDirectory: options.buildDirectory,
+        hotFile: options.hotFile,
+    });
     const port = resolvePort(options.port, defaults.port);
 
     const blocks = options.blocks === false ? {} : blockEntries(root);
@@ -151,8 +193,9 @@ export default function pollora(options = {}) {
     const plugins = [
         {
             name: 'pollora:config',
-            config: () => ({
-                base,
+            // A standalone build is relative to wherever it is served from; its dev server serves from the root
+            config: (config, { command }) => ({
+                ...(base === null ? (command === 'build' ? { base: './' } : {}) : { base }),
                 build: { emptyOutDir: false },
                 server: devServer(port),
             }),
@@ -167,7 +210,7 @@ export default function pollora(options = {}) {
         input: [...input, ...Object.values(blocks)],
         publicDirectory,
         // Written from the working directory, unlike the build directory resolved from the root
-        hotFile: path.resolve(root, publicDirectory, `${name}.hot`),
+        hotFile,
         buildDirectory,
         refresh,
         assets: options.assets ?? defaults.assets,

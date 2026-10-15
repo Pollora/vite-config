@@ -3,7 +3,7 @@ import assert from 'node:assert/strict';
 import fs from 'node:fs';
 import path from 'node:path';
 import { build, resolveConfig } from 'vite';
-import pollora, { kebab } from '../src/index.js';
+import pollora, { kebab, layoutOf } from '../src/index.js';
 
 // A project laid out like a Pollora site: the public directory each type expects
 // Inside the package, so the fixture resolves tailwindcss from its node_modules
@@ -169,3 +169,79 @@ describe('pollora()', () => {
         assert.match(manifest['resources/assets/app.js'].file, /^assets\//);
     });
 });
+
+describe('pollora() with a standalone layout', () => {
+    // A classic theme, a plugin or a Bedrock site: no shared public directory
+    const standalone = async (type, command = 'build', options = {}) => resolveConfig({
+        configFile: false,
+        root: roots[type],
+        logLevel: 'silent',
+        plugins: [pollora({ type, root: roots[type], tailwind: false, layout: 'standalone', ...options })],
+    }, command);
+
+    test('refuses an unknown layout', () => {
+        assert.throws(() => pollora({ type: 'theme', layout: 'bedrock' }), /"layout" must be one of pollora, standalone/);
+    });
+
+    for (const type of ['theme', 'plugin']) {
+        test(`builds a ${type} inside itself, with relative URLs`, async () => {
+            const config = await standalone(type);
+
+            assert.equal(path.resolve(config.root, config.build.outDir), path.join(roots[type], 'build'));
+            assert.equal(config.base, './');
+            assert.equal(config.build.manifest, 'manifest.json');
+            assert.equal(config.build.emptyOutDir, false);
+        });
+    }
+
+    test('serves the dev server from its root, not from a build path', async () => {
+        // laravel-vite-plugin refuses a dev server where CI is set, and this only reads the configuration
+        process.env.LARAVEL_BYPASS_ENV_CHECK = '1';
+
+        try {
+            const config = await standalone('theme', 'serve');
+
+            assert.equal(config.base, '/');
+            assert.equal(config.server.port, 5173);
+        } finally {
+            delete process.env.LARAVEL_BYPASS_ENV_CHECK;
+        }
+    });
+
+    test('writes the hot file at the root of the package, and the build and hot file can be renamed', () => {
+        const root = roots.theme;
+
+        assert.deepEqual(layoutOf({ layout: 'standalone', type: 'theme', name: 'starter', root }), {
+            publicDirectory: '.',
+            buildDirectory: 'build',
+            hotFile: path.join(root, 'hot'),
+            base: null,
+        });
+        assert.deepEqual(layoutOf({ layout: 'standalone', type: 'plugin', name: 'acme', root, buildDirectory: 'dist', hotFile: '.hot' }), {
+            publicDirectory: '.',
+            buildDirectory: 'dist',
+            hotFile: path.join(root, '.hot'),
+            base: null,
+        });
+    });
+
+    test('keeps the Pollora layout exactly as it was', () => {
+        const root = roots.plugin;
+
+        assert.deepEqual(layoutOf({ type: 'plugin', name: 'acme-forms', root }), {
+            publicDirectory: '../../../../public',
+            buildDirectory: path.join('build', 'plugin', 'acme-forms'),
+            hotFile: path.resolve(root, '../../../../public', 'acme-forms.hot'),
+            base: '/build/plugin/acme-forms',
+        });
+    });
+
+    test('builds the entry point and the blocks where the PHP side looks for them', async () => {
+        const config = await standalone('plugin');
+        const inputs = [config.build.rollupOptions.input].flat().map((file) => path.relative(roots.plugin, path.resolve(roots.plugin, file))).sort();
+
+        assert.ok(inputs.includes('resources/assets/app.js'));
+        assert.ok(inputs.includes('resources/views/blocks/hero/index.jsx'));
+    });
+});
+
