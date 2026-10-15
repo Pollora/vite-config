@@ -46,7 +46,7 @@ export default defineConfig({
 | Dev server | serves under the build path | serves from its root: the hot file holds the origin (`http://localhost:5173`) |
 | Entry points | `resources/assets/app.js`, blocks | the same |
 
-`buildDirectory` (`build`) and `hotFile` (`hot`) rename the two, and `publicDirectory` (`.`) moves the folder they sit in; give the same names to `Assets::theme()` on the PHP side. The manifest keys do not change (`resources/assets/app.js`), so a file is looked up the same way in both layouts.
+`buildDirectory` (`build`) and `hotFile` (`hot`) rename the two, and `publicDirectory` (`.`) moves the folder they sit in; give the same values to the container on the PHP side (`build_directory`, `hot_file`, `public_path`). The manifest keys do not change (`resources/assets/app.js`), so a file is looked up the same way in both layouts.
 
 ## Options
 
