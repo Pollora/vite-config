@@ -1,6 +1,7 @@
 import path from 'node:path';
 import fs from 'node:fs';
 import { globSync } from 'glob';
+import { version as viteVersion } from 'vite';
 import laravel, { refreshPaths } from 'laravel-vite-plugin';
 
 /**
@@ -71,6 +72,16 @@ function isDocker() {
 }
 
 /**
+ * Vite 8.3.1 moved the WebSocket options from `server.hmr` to `server.ws` and
+ * deprecated the old place; earlier versions only know `server.hmr`.
+ */
+export function usesWsOption(version = viteVersion) {
+    const [major, minor, patch] = version.split('.').map((part) => parseInt(part, 10));
+
+    return major > 8 || (major === 8 && (minor > 3 || (minor === 3 && patch >= 1)));
+}
+
+/**
  * Dev server reachable from the site: inside DDEV or Docker it listens on every
  * interface and announces the site's own host, elsewhere it serves localhost.
  */
@@ -78,6 +89,8 @@ export function devServer(port) {
     const url = baseUrl();
     const isHttps = url.startsWith('https');
     const hostname = new URL(url).hostname;
+    const socket = { protocol: isHttps ? 'wss' : 'ws', host: hostname };
+    const websocket = usesWsOption() ? { ws: socket } : { hmr: socket };
     const common = {
         port,
         strictPort: true,
@@ -93,7 +106,7 @@ export function devServer(port) {
             ...common,
             host: '0.0.0.0',
             origin: `${url}:${port}`,
-            hmr: { protocol: isHttps ? 'wss' : 'ws', host: hostname },
+            ...websocket,
         };
     }
 
@@ -101,7 +114,7 @@ export function devServer(port) {
         ...common,
         https: isHttps,
         host: isHttps ? hostname : 'localhost',
-        hmr: { protocol: isHttps ? 'wss' : 'ws', host: hostname },
+        ...websocket,
     };
 }
 

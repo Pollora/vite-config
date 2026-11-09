@@ -3,7 +3,7 @@ import assert from 'node:assert/strict';
 import fs from 'node:fs';
 import path from 'node:path';
 import { build, resolveConfig } from 'vite';
-import pollora, { kebab, layoutOf } from '../src/index.js';
+import pollora, { kebab, layoutOf, usesWsOption } from '../src/index.js';
 
 // A project laid out like a Pollora site: the public directory each type expects
 // Inside the package, so the fixture resolves tailwindcss from its node_modules
@@ -119,8 +119,10 @@ describe('pollora()', () => {
 
             assert.equal(server.host, '0.0.0.0');
             assert.equal(server.origin, 'https://acme.ddev.site:5173');
-            assert.equal(server.hmr.protocol, 'wss');
-            assert.equal(server.hmr.host, 'acme.ddev.site');
+            const socket = usesWsOption() ? server.ws : server.hmr;
+
+            assert.equal(socket.protocol, 'wss');
+            assert.equal(socket.host, 'acme.ddev.site');
         } finally {
             delete process.env.DDEV_PRIMARY_URL;
         }
@@ -245,3 +247,13 @@ describe('pollora() with a standalone layout', () => {
     });
 });
 
+
+describe('usesWsOption', () => {
+    test('switches to server.ws from Vite 8.3.1', () => {
+        assert.equal(usesWsOption('7.3.0'), false);
+        assert.equal(usesWsOption('8.3.0'), false);
+        assert.equal(usesWsOption('8.3.1'), true);
+        assert.equal(usesWsOption('8.10.0'), true);
+        assert.equal(usesWsOption('9.0.0'), true);
+    });
+});
