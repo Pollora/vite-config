@@ -54,3 +54,4 @@ export function layoutOf(settings: {
 export function kebab(name: string): string;
 export function blockEntries(root: string): Record<string, string>;
 export function devServer(port: number): Record<string, unknown>;
+export function usesWsOption(version?: string): boolean;
