@@ -25,7 +25,7 @@
         "test": "node --test test/*.test.js"
     },
     "dependencies": {
-        "glob": "^11.0.0"
+        "glob": "^13.0.7"
     },
     "peerDependencies": {
         "@roots/vite-plugin": "^2.0.0",
